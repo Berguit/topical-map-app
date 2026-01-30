@@ -6,3 +6,10 @@ export {
   getEAVModelPrompt,
   getTopicalMapPrompt,
 } from "./prompts";
+
+export type {
+  HaloscanDataInput,
+  HaloscanKeywordData,
+  HaloscanQuestionData,
+  HaloscanClusterData,
+} from "./prompts";

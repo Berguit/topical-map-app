@@ -5,6 +5,12 @@ interface Message {
   content: string;
 }
 
+interface OpenRouterOptions {
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
 interface OpenRouterResponse {
   id: string;
   choices: {
@@ -21,13 +27,17 @@ interface OpenRouterResponse {
   };
 }
 
+/**
+ * Call OpenRouter API with Claude
+ *
+ * Supports two call signatures:
+ * 1. callOpenRouter(prompt, systemPrompt?, options?) - Simple string-based
+ * 2. callOpenRouter(messages, options?) - Full message array (legacy)
+ */
 export async function callOpenRouter(
-  messages: Message[],
-  options?: {
-    model?: string;
-    temperature?: number;
-    max_tokens?: number;
-  }
+  promptOrMessages: string | Message[],
+  systemPromptOrOptions?: string | OpenRouterOptions,
+  options?: OpenRouterOptions
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -35,7 +45,28 @@ export async function callOpenRouter(
     throw new Error("OPENROUTER_API_KEY is not configured");
   }
 
-  const model = options?.model || process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4";
+  // Determine which signature was used
+  let messages: Message[];
+  let opts: OpenRouterOptions;
+
+  if (typeof promptOrMessages === "string") {
+    // New signature: callOpenRouter(prompt, systemPrompt?, options?)
+    const prompt = promptOrMessages;
+    const systemPrompt = typeof systemPromptOrOptions === "string" ? systemPromptOrOptions : undefined;
+    opts = typeof systemPromptOrOptions === "object" ? systemPromptOrOptions : (options || {});
+
+    messages = [];
+    if (systemPrompt) {
+      messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: prompt });
+  } else {
+    // Legacy signature: callOpenRouter(messages, options?)
+    messages = promptOrMessages;
+    opts = (typeof systemPromptOrOptions === "object" ? systemPromptOrOptions : {}) as OpenRouterOptions;
+  }
+
+  const model = opts.model || process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4";
 
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
@@ -48,8 +79,8 @@ export async function callOpenRouter(
     body: JSON.stringify({
       model,
       messages,
-      temperature: options?.temperature ?? 0.7,
-      max_tokens: options?.max_tokens ?? 4096,
+      temperature: opts.temperature ?? 0.7,
+      max_tokens: opts.max_tokens ?? 4096,
     }),
   });
 
@@ -67,7 +98,9 @@ export async function callOpenRouter(
   return data.choices[0].message.content;
 }
 
-// Helper to parse JSON from LLM response (handles markdown code blocks)
+/**
+ * Helper to parse JSON from LLM response (handles markdown code blocks)
+ */
 export function parseJSONResponse<T>(response: string): T {
   // Remove markdown code blocks if present
   let cleaned = response.trim();
@@ -84,5 +117,10 @@ export function parseJSONResponse<T>(response: string): T {
 
   cleaned = cleaned.trim();
 
-  return JSON.parse(cleaned) as T;
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (error) {
+    console.error("Failed to parse JSON response:", cleaned.substring(0, 500));
+    throw new Error(`Failed to parse LLM response as JSON: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 }
