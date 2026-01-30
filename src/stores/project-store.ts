@@ -3,6 +3,10 @@ import { persist } from 'zustand/middleware';
 import type { Project, TopicalMapNode, TopicalMapEdge } from '@/types';
 
 interface ProjectState {
+  // Hydration state
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+
   // Current project
   currentProject: Project | null;
 
@@ -26,6 +30,9 @@ interface ProjectState {
 export const useProjectStore = create<ProjectState>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+
       currentProject: null,
       projects: [],
 
@@ -138,6 +145,14 @@ export const useProjectStore = create<ProjectState>()(
     }),
     {
       name: 'topical-map-storage',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
+
+// Hook to wait for hydration
+export const useHydration = () => {
+  return useProjectStore((state) => state._hasHydrated);
+};
