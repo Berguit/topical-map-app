@@ -130,8 +130,39 @@ Voir le repo `topical-map-saas` pour:
 
 ## Notes de Session
 
+> **IMPORTANT**: Voir `SESSION-NOTES.md` pour les détails complets de l'implémentation actuelle.
+
+### 31 janvier 2026
+- **Haloscan API**: Client complet créé avec 14 endpoints
+- **OpenRouter/Claude**: Intégration avec prompts Semantic SEO
+- **INSIGHT CLÉ**: Les données Haloscan sont injectées DANS les prompts Claude
+  - Claude ne "devine" plus, il analyse des données RÉELLES
+  - Keywords, volumes, KGR, PAA, clusters → tout vient de Haloscan
+- **Service d'orchestration**: `src/lib/services/topical-map-generator.ts`
+- **API Route**: `/api/generate` avec step `full-with-haloscan`
+- **Prochaine étape**: Tester le pipeline complet
+
 ### 30 janvier 2026
 - Initialisation du projet Next.js 14
 - Configuration Tailwind CSS v4 + Shadcn/ui
 - Installation React Flow, Zustand, React Query
 - Création de la structure de dossiers
+
+## État actuel du développement
+
+### FAIT
+- [x] Projet Next.js 14 initialisé
+- [x] Types TypeScript définis
+- [x] Client Haloscan complet (14 endpoints)
+- [x] Client OpenRouter (Claude Sonnet 4.5)
+- [x] Prompts avec injection données Haloscan
+- [x] Service orchestration pipeline complet
+- [x] API route `/api/generate`
+- [x] Composants React Flow (pillar, cluster, supporting)
+
+### À FAIRE
+- [ ] Tester pipeline complet avec vrai keyword
+- [ ] Frontend: wizard création projet
+- [ ] Frontend: visualisation Topical Map
+- [ ] Content briefs
+- [ ] WordPress deployment
